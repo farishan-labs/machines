@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "test": "bun test ./packages/core",
-    "typecheck": "bun run --cwd packages/core typecheck && bun run --cwd packages/cli typecheck && bun run --cwd apps/web typecheck",
+    "typecheck": "bun run --cwd packages/core typecheck && bun run --cwd packages/cli typecheck && bun run --cwd apps/web typecheck && bun run --cwd apps/desktop typecheck",
     "build": "bun run --filter './apps/*' build",
     "lint": "biome check .",
     "format": "biome check --write .",
