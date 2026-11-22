@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Machine, emptyMachine } from "./types";
+import { useEffect, useState } from "react";
+import { emptyMachine, type Machine } from "./types";
 import "./App.css";
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -29,6 +29,7 @@ export default function App() {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     refresh();
   }, []);
@@ -103,14 +104,16 @@ export default function App() {
       {!editing && (
         <>
           <div className="toolbar">
-            <button onClick={startNew}>+ New machine</button>
+            <button type="button" onClick={startNew}>
+              + New machine
+            </button>
             <div className="collect">
               <input
                 placeholder="ssh host (e.g. vps) or 'local'"
                 value={collectHost}
                 onChange={(e) => setCollectHost(e.target.value)}
               />
-              <button onClick={collect} disabled={collecting}>
+              <button type="button" onClick={collect} disabled={collecting}>
                 {collecting ? "Collecting…" : "Auto-collect via SSH"}
               </button>
             </div>
@@ -136,14 +139,20 @@ export default function App() {
                   <td>{m.os_name}</td>
                   <td>{m.memory}</td>
                   <td className="actions">
-                    <button onClick={() => startEdit(m)}>Edit</button>
-                    <button className="danger" onClick={() => remove(m.id)}>Delete</button>
+                    <button type="button" onClick={() => startEdit(m)}>
+                      Edit
+                    </button>
+                    <button type="button" className="danger" onClick={() => remove(m.id)}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
               {machines.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="empty">No machines yet.</td>
+                  <td colSpan={6} className="empty">
+                    No machines yet.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -157,8 +166,16 @@ export default function App() {
           <div className="grid">
             <Field label="Name" value={editing.name} onChange={(v) => setField("name", v)} />
             <Field label="Host (SSH)" value={editing.host} onChange={(v) => setField("host", v)} />
-            <Field label="Hardware vendor" value={editing.hardware_vendor} onChange={(v) => setField("hardware_vendor", v)} />
-            <Field label="Hardware model" value={editing.hardware_model} onChange={(v) => setField("hardware_model", v)} />
+            <Field
+              label="Hardware vendor"
+              value={editing.hardware_vendor}
+              onChange={(v) => setField("hardware_vendor", v)}
+            />
+            <Field
+              label="Hardware model"
+              value={editing.hardware_model}
+              onChange={(v) => setField("hardware_model", v)}
+            />
             <Field label="Processor" value={editing.processor} onChange={(v) => setField("processor", v)} />
             <Field label="Memory" value={editing.memory} onChange={(v) => setField("memory", v)} />
             <Field label="Graphics" value={editing.graphics} onChange={(v) => setField("graphics", v)} />
@@ -166,13 +183,21 @@ export default function App() {
             <Field label="OS name" value={editing.os_name} onChange={(v) => setField("os_name", v)} />
             <Field label="OS type" value={editing.os_type} onChange={(v) => setField("os_type", v)} />
             <Field label="GNOME version" value={editing.gnome_version} onChange={(v) => setField("gnome_version", v)} />
-            <Field label="Windowing system" value={editing.windowing_system} onChange={(v) => setField("windowing_system", v)} />
+            <Field
+              label="Windowing system"
+              value={editing.windowing_system}
+              onChange={(v) => setField("windowing_system", v)}
+            />
             <Field label="Kernel" value={editing.kernel} onChange={(v) => setField("kernel", v)} />
             <Field label="Notes" value={editing.notes} onChange={(v) => setField("notes", v)} />
           </div>
           <div className="toolbar">
-            <button onClick={save}>Save</button>
-            <button className="secondary" onClick={cancel}>Cancel</button>
+            <button type="button" onClick={save}>
+              Save
+            </button>
+            <button type="button" className="secondary" onClick={cancel}>
+              Cancel
+            </button>
           </div>
         </div>
       )}

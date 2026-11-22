@@ -10,7 +10,10 @@ describe("parseMachinesJson", () => {
   });
 
   test("drops invalid entries", () => {
-    const json = JSON.stringify([{ id: "a" }, { id: "b", name: "B", os: "linux", role: "work", host: "h", owner: "o" }]);
+    const json = JSON.stringify([
+      { id: "a" },
+      { id: "b", name: "B", os: "linux", role: "work", host: "h", owner: "o" },
+    ]);
     const machines = parseMachinesJson(json);
     expect(machines.length).toBe(1);
     expect(machines[0]?.id).toBe("b");

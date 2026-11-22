@@ -1,7 +1,7 @@
 import type { Machine } from "./types";
 
-export * from "./types";
 export * from "./env";
+export * from "./types";
 
 export function findMachine(inventory: { machines: Machine[] }, id: string): Machine | undefined {
   return inventory.machines.find((m) => m.id === id);

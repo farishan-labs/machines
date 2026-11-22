@@ -1,5 +1,5 @@
-import { loadInventory, findMachine } from "@machines/core";
 import type { Machine } from "@machines/core";
+import { findMachine, loadInventory } from "@machines/core";
 
 function env(): Record<string, string | undefined> {
   return process.env as Record<string, string | undefined>;
