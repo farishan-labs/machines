@@ -1,6 +1,7 @@
+import { readFileSync } from "node:fs";
 import type { Machine, MachineInventory, MachineOs, MachinePreferences, MachineRole, Org } from "./types";
 
-const VALID_OS: MachineOs[] = ["linux", "macos", "windows", "other"];
+const VALID_OS: MachineOs[] = ["linux", "macos", "windows", "other", "android", "ios"];
 const VALID_ROLES: MachineRole[] = ["personal", "work", "shared"];
 
 const PREF_KEYS = ["preferences", "prefs", "paths", "codebases"] as const;
@@ -40,6 +41,7 @@ function parseMachine(raw: unknown): Machine | null {
   if (typeof r.host !== "string") return null;
   if (typeof r.owner !== "string") return null;
   const tags = Array.isArray(r.tags) ? r.tags.filter((t): t is string => typeof t === "string") : undefined;
+  const hostname = typeof r.hostname === "string" ? r.hostname : undefined;
   const preferences = extractPreferences(r);
   const machine: Machine = {
     id: r.id,
@@ -47,6 +49,7 @@ function parseMachine(raw: unknown): Machine | null {
     os: r.os,
     role: r.role,
     host: r.host,
+    ...(hostname !== undefined ? { hostname } : {}),
     owner: r.owner,
     ...(tags !== undefined ? { tags } : {}),
     ...(preferences !== undefined
@@ -83,7 +86,18 @@ function parsePreferencesMap(raw: unknown): Record<string, MachinePreferences> |
 }
 
 export function loadInventory(env: Record<string, string | undefined>): MachineInventory {
-  const raw = env.MACHINES_JSON ?? "[]";
+  let raw: string;
+  if (env.MACHINES_JSON !== undefined) {
+    raw = env.MACHINES_JSON;
+  } else if (env.MACHINES_FILE) {
+    try {
+      raw = readFileSync(env.MACHINES_FILE, "utf8");
+    } catch {
+      raw = "[]";
+    }
+  } else {
+    raw = "[]";
+  }
   const machines = parseMachinesJson(raw);
   const trimmed = env.DEFAULT_MACHINE?.trim();
 

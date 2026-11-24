@@ -1,4 +1,4 @@
-export type MachineOs = "linux" | "macos" | "windows" | "other";
+export type MachineOs = "linux" | "macos" | "windows" | "other" | "android" | "ios";
 export type MachineRole = "personal" | "work" | "shared";
 
 /**
@@ -21,6 +21,7 @@ export interface Machine {
   os: MachineOs;
   role: MachineRole;
   host: string;
+  hostname?: string;
   owner: string;
   tags?: string[];
   preferences?: MachinePreferences;

@@ -1,4 +1,6 @@
+#!/usr/bin/env bun
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Machine, MachinePreferences } from "@machines/core";
@@ -106,7 +108,11 @@ function printPrefs(id: string, prefs: MachinePreferences): void {
 }
 
 const args = process.argv.slice(2);
-const cmd = args[0] ?? "list";
+const flags = new Set(args.filter((a) => a.startsWith("--")));
+const positional = args.filter((a) => !a.startsWith("--"));
+const cmd = positional[0] ?? "list";
+const jsonFlag = flags.has("--json");
+const plainFlag = flags.has("--plain");
 
 const inventory = mergePrefs(loadInventory(env()));
 
@@ -115,12 +121,22 @@ if (cmd === "list") {
     console.log("No machines configured. Set MACHINES_JSON in .env");
     process.exit(0);
   }
+  if (jsonFlag) {
+    console.log(JSON.stringify(inventory, null, 2));
+    process.exit(0);
+  }
+  if (plainFlag) {
+    for (const m of inventory.machines) {
+      console.log(`${m.id}\t${m.name}\t${m.os}\t${m.role}`);
+    }
+    process.exit(0);
+  }
   for (const m of inventory.machines) printMachine(m);
   if (inventory.defaultMachineId) {
     console.log(`\ndefault: ${inventory.defaultMachineId}`);
   }
 } else if (cmd === "show") {
-  const id = args[1];
+  const id = positional[1];
   if (!id) {
     console.error("usage: machines show <id>");
     process.exit(1);
@@ -130,7 +146,21 @@ if (cmd === "list") {
     console.error(`machine not found: ${id}`);
     process.exit(1);
   }
+  if (jsonFlag) {
+    console.log(JSON.stringify(m, null, 2));
+    process.exit(0);
+  }
+  if (plainFlag) {
+    console.log(`${m.id}\t${m.name}\t${m.os}\t${m.role}`);
+    process.exit(0);
+  }
   printMachine(m);
+} else if (cmd === "whoami") {
+  const hn = hostname().toLowerCase();
+  const m = inventory.machines.find(
+    (x) => (x.host ?? "").toLowerCase() === hn || (x.hostname ?? "").toLowerCase() === hn,
+  );
+  console.log(m ? m.id : "(unknown)");
 } else if (cmd === "default") {
   if (inventory.defaultMachineId) {
     console.log(inventory.defaultMachineId);
@@ -202,6 +232,6 @@ if (cmd === "list") {
   for (const o of orgs) console.log(`${o.id}  ${o.name}${o.kind ? `  (${o.kind})` : ""}`);
 } else {
   console.error(`unknown command: ${cmd}`);
-  console.error("commands: list, show <id>, default, prefs [id|set|unset|list], orgs");
+  console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs");
   process.exit(1);
 }
