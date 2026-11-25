@@ -163,6 +163,7 @@ const html = `<!doctype html>
   input:focus-visible, button:focus-visible { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
   .error { color: var(--ui-color-danger-default, #dc2626); margin: var(--ui-space-2, 0.5rem) 0; }
   ui-card { display: block; min-height: 22rem; }
+  ui-card::part(card) { height: 100%; min-height: inherit; box-sizing: border-box; }
   .ts-panel { display: grid; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-4, 1rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-lg, 0.5rem); background: var(--ui-color-bg-muted, #f4f4f5); }
   .ts-row { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
