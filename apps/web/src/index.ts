@@ -147,6 +147,7 @@ const html = `<!doctype html>
   body { font-family: var(--ui-font-family-sans, system-ui); margin: 0; padding: var(--ui-space-6, 1.5rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
   *, *::before, *::after { box-sizing: border-box; }
   .shell { display: grid; gap: var(--ui-space-4, 1rem); max-width: 100%; }
+  main { display: grid; gap: var(--ui-space-4, 1rem); }
   header h1 { font-size: var(--ui-font-size-2xl, 1.5rem); margin: 0 0 var(--ui-space-2, 0.5rem); }
   #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--ui-space-4, 1rem); }
   @media (min-width: 1024px) { #list { grid-template-columns: repeat(4, 1fr); } }
@@ -154,7 +155,7 @@ const html = `<!doctype html>
   .meta { color: var(--ui-color-fg-muted, #71717a); font-size: var(--ui-font-size-sm, 0.875rem); }
   .prefs { margin-top: var(--ui-space-3, 0.75rem); display: grid; gap: var(--ui-space-2, 0.5rem); }
   .pref { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); flex-wrap: nowrap; }
-  .pref input.orgval { flex: 1; min-width: 0; }
+  .pref input.orgval { flex: 1 1 0; min-width: 0; width: 0; }
   .pref-key { font-weight: 600; min-width: 6rem; }
   .pref-val { color: var(--ui-color-fg-default, #09090b); }
   .addpref { display: flex; gap: var(--ui-space-2, 0.5rem); margin-top: var(--ui-space-3, 0.75rem); flex-wrap: wrap; }

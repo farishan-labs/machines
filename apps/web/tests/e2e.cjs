@@ -88,6 +88,49 @@ function toHex(c) {
     await ctx.close();
   });
 
+  // Test 4: #ts-section has enough spacing to #list
+  await run('#ts-section has enough spacing to #list', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, colorScheme: 'light' });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:7778', { waitUntil: 'networkidle' });
+    await page.waitForSelector('#list', { timeout: 10000 });
+    const gap = await page.evaluate(() => {
+      const ts = document.getElementById('ts-section');
+      const list = document.getElementById('list');
+      const r1 = ts.getBoundingClientRect();
+      const r2 = list.getBoundingClientRect();
+      return r2.top - r1.bottom;
+    });
+    assert(gap >= 12, `expected >=12px gap between ts-section and list, got ${gap}`);
+    await ctx.close();
+  });
+
+  // Test 5: all machine cards have same height
+  await run('all machine cards have equal height', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, colorScheme: 'light' });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:7778', { waitUntil: 'networkidle' });
+    await page.waitForSelector('ui-card', { timeout: 10000 });
+    const heights = await page.evaluate(() => Array.from(document.querySelectorAll('ui-card')).map(e => Math.round(e.getBoundingClientRect().height)));
+    const unique = new Set(heights);
+    assert(unique.size === 1, `card heights differ: ${heights.join(', ')}`);
+    await ctx.close();
+  });
+
+  // Test 6: no horizontal overflow in any viewport
+  await run('no horizontal overflow in any viewport', async () => {
+    const viewports = [{width:320,height:568},{width:375,height:667},{width:768,height:1024},{width:1024,height:768},{width:1280,height:720},{width:1440,height:900}];
+    for (const vp of viewports) {
+      const ctx = await browser.newContext({ viewport: vp, colorScheme: 'light' });
+      const page = await ctx.newPage();
+      await page.goto('http://127.0.0.1:7778', { waitUntil: 'networkidle' });
+      await page.waitForSelector('ui-card', { timeout: 10000 });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      assert(overflow <= 1, `horizontal overflow ${overflow}px at ${vp.width}x${vp.height}`);
+      await ctx.close();
+    }
+  });
+
   await browser.close();
   srv.kill();
   await new Promise(r => setTimeout(r, 500));
