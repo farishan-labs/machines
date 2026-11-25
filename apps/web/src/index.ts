@@ -162,7 +162,7 @@ const html = `<!doctype html>
   .addpref input, input.orgval, input.k, input.v { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
   input:focus-visible, button:focus-visible { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
   .error { color: var(--ui-color-danger-default, #dc2626); margin: var(--ui-space-2, 0.5rem) 0; }
-  ui-card { display: block; }
+  ui-card { display: block; min-height: 22rem; }
   .ts-panel { display: grid; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-4, 1rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-lg, 0.5rem); background: var(--ui-color-bg-muted, #f4f4f5); }
   .ts-row { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
@@ -187,13 +187,6 @@ const html = `<!doctype html>
   <script type="module" src="/ui/index.js"></script>
   <script>
     function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function equalizeCardHeights() {
-      const cards = Array.from(document.querySelectorAll('ui-card'));
-      if (!cards.length) return;
-      cards.forEach(c => { c.style.height = 'auto'; });
-      const max = Math.max(...cards.map(c => c.getBoundingClientRect().height));
-      cards.forEach(c => { c.style.height = max + 'px'; });
-    }
     async function load() {
       const [mRes, oRes, tsRes] = await Promise.all([fetch('/api/machines'), fetch('/api/orgs'), fetch('/api/tailscale')]);
       const d = await mRes.json();
@@ -265,7 +258,6 @@ const html = `<!doctype html>
         card.innerHTML = '<span slot="header"><strong>'+esc(m.name)+'</strong> ('+esc(m.id)+') ' + currentBadge + statusBadge + '</span><div class="meta">'+esc(m.os)+' · '+esc(m.role)+' · '+esc(m.host)+' · '+esc(m.owner)+'</div>'+prefsHtml;
         el.appendChild(card);
       }
-      equalizeCardHeights();
       document.querySelectorAll('.saveorg').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id; const key = btn.dataset.key;
@@ -302,7 +294,6 @@ const html = `<!doctype html>
       });
     }
     load();
-    window.addEventListener('resize', equalizeCardHeights);
   </script>
 </body>
 </html>`;
