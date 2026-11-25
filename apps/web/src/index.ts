@@ -142,38 +142,48 @@ const html = `<!doctype html>
 <link rel="stylesheet" href="/ui/tokens.css" />
 <link rel="stylesheet" href="/ui/baseline.css" />
 <style>
+  .skip { position: absolute; left: -9999px; top: 0; background: var(--ui-color-accent-default,#2563eb); color: var(--ui-color-accent-fg,#fff); padding: var(--ui-space-2,0.5rem) var(--ui-space-3,0.75rem); border-radius: var(--ui-radius-md,0.375rem); z-index: 1000; }
+  .skip:focus { left: var(--ui-space-6,1.5rem); top: var(--ui-space-6,1.5rem); }
   body { font-family: var(--ui-font-family-sans, system-ui); margin: 0; padding: var(--ui-space-6, 1.5rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
   *, *::before, *::after { box-sizing: border-box; }
   .shell { display: grid; gap: var(--ui-space-4, 1rem); max-width: 100%; }
+  header h1 { font-size: var(--ui-font-size-2xl, 1.5rem); margin: 0 0 var(--ui-space-2, 0.5rem); }
   #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--ui-space-4, 1rem); }
   .card-current { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
-  .ts-panel { display: grid; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-4, 1rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-lg, 0.5rem); background: var(--ui-color-bg-muted, #f4f4f5); }
-  .ts-row { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .dot.on { background: var(--ui-color-success-default, #16a34a); }
-  .dot.off { background: var(--ui-color-fg-muted, #71717a); }
-  .dot.unknown { background: var(--ui-color-border-default, #e4e4e7); }
-  h1 { font-size: var(--ui-font-size-2xl, 1.5rem); margin: 0 0 var(--ui-space-2, 0.5rem); }
   .meta { color: var(--ui-color-fg-muted, #71717a); font-size: var(--ui-font-size-sm, 0.875rem); }
   .prefs { margin-top: var(--ui-space-3, 0.75rem); display: grid; gap: var(--ui-space-2, 0.5rem); }
   .pref { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); flex-wrap: wrap; }
   .pref-key { font-weight: 600; min-width: 6rem; }
   .pref-val { color: var(--ui-color-fg-default, #09090b); }
   .addpref { display: flex; gap: var(--ui-space-2, 0.5rem); margin-top: var(--ui-space-3, 0.75rem); flex-wrap: wrap; }
-  .addpref input { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
+  .addpref input, input.orgval, input.k, input.v { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
   .error { color: var(--ui-color-danger-default, #dc2626); margin: var(--ui-space-2, 0.5rem) 0; }
-  input.orgval { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
   ui-card { display: block; }
+  .ts-panel { display: grid; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-4, 1rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-lg, 0.5rem); background: var(--ui-color-bg-muted, #f4f4f5); }
+  .ts-row { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.on { background: var(--ui-color-success-default, #16a34a); }
+  .dot.off { background: var(--ui-color-danger-default, #dc2626); }
+  .dot.unknown { background: var(--ui-color-fg-muted, #71717a); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
+  <a class="skip" href="#list">Skip to machines</a>
   <div class="shell">
-    <h1>Machines</h1>
-    <div id="error" class="error"></div>
-    <div id="list"></div>
+    <header><h1>Machines</h1></header>
+    <div id="error" class="error" role="alert" aria-live="assertive"></div>
+    <main id="main">
+      <section aria-label="Tailscale status" id="ts-section"></section>
+      <div id="list" tabindex="-1"></div>
+    </main>
   </div>
   <script type="module" src="/ui/index.js"></script>
   <script>
+    function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     async function load() {
       const [mRes, oRes, tsRes] = await Promise.all([fetch('/api/machines'), fetch('/api/orgs'), fetch('/api/tailscale')]);
       const d = await mRes.json();
@@ -182,7 +192,6 @@ const html = `<!doctype html>
       const el = document.getElementById('list');
       el.innerHTML = '';
       const cur = d.currentMachineId || '';
-      // tailscale lookup
       const tsMap = {};
       (ts.peers || []).forEach(p => { tsMap[String(p.name).toLowerCase()] = !!p.online; });
       if (ts.self) tsMap[String(ts.self).toLowerCase()] = true;
@@ -192,25 +201,29 @@ const html = `<!doctype html>
         return null;
       }
       // tailscale panel
+      const tsSection = document.getElementById('ts-section');
+      tsSection.innerHTML = '';
       const panel = document.createElement('div');
       panel.className = 'ts-panel';
+      panel.setAttribute('role','region');
+      panel.setAttribute('aria-label','Tailscale status');
       const title = document.createElement('div');
-      title.innerHTML = '<strong>Tailscale</strong> <span class="meta">self: ' + (ts.self || 'unknown') + '</span>';
+      title.innerHTML = '<strong>Tailscale</strong> <span class="meta">self: ' + esc(ts.self || 'unknown') + '</span>';
       panel.appendChild(title);
+      const ul = document.createElement('ul');
+      ul.style.listStyle = 'none'; ul.style.padding = '0'; ul.style.margin = '0';
       (ts.peers || []).forEach(p => {
-        const row = document.createElement('div');
-        row.className = 'ts-row';
+        const li = document.createElement('li');
+        li.className = 'ts-row';
         const dot = document.createElement('span');
         dot.className = 'dot ' + (p.online ? 'on' : 'off');
-        row.appendChild(dot);
-        row.appendChild(document.createTextNode(p.name + (p.ip ? '  ' + p.ip : '') + (p.online ? '  (online)' : '  (offline)')));
-        panel.appendChild(row);
+        dot.setAttribute('aria-hidden','true');
+        li.appendChild(dot);
+        li.appendChild(document.createTextNode(p.name + (p.ip ? '  ' + p.ip : '') + (p.online ? '  (online)' : '  (offline)')));
+        ul.appendChild(li);
       });
-      const listParent = el.parentElement;
-      // insert panel before list
-      const existingPanel = document.querySelector('.ts-panel');
-      if (existingPanel) existingPanel.remove();
-      el.before(panel);
+      panel.appendChild(ul);
+      tsSection.appendChild(panel);
 
       if (!d.machines || d.machines.length === 0) {
         const es = document.createElement('ui-empty-state');
@@ -227,19 +240,19 @@ const html = `<!doctype html>
         let prefsHtml = '<div class="prefs">';
         for (const o of orgList) {
           const val = prefs[o.id] || '';
-          prefsHtml += '<div class="pref"><span class="pref-key">'+o.name+':</span><input data-id="'+m.id+'" data-key="'+o.id+'" class="orgval" value="'+val+'" placeholder="path" /><ui-button variant="secondary" size="sm" label="Save" data-id="'+m.id+'" data-key="'+o.id+'" class="saveorg"></ui-button></div>';
+          prefsHtml += '<div class="pref"><span class="pref-key">'+esc(o.name)+':</span><input data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="orgval" value="'+esc(val)+'" placeholder="path" aria-label="'+esc(o.name)+' path for '+esc(m.name)+'" /><ui-button variant="secondary" size="sm" label="Save" data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="saveorg"></ui-button></div>';
         }
         for (const [k, v] of Object.entries(prefs)) {
           if (!orgList.some(o=>o.id===k)) {
-            prefsHtml += '<div class="pref"><span class="pref-key">'+k+':</span><span class="pref-val">'+v+'</span><ui-button variant="ghost" size="sm" label="✕" data-id="'+m.id+'" data-key="'+k+'" class="del"></ui-button></div>';
+            prefsHtml += '<div class="pref"><span class="pref-key">'+esc(k)+':</span><span class="pref-val">'+esc(v)+'</span><ui-button variant="ghost" size="sm" label="✕" data-id="'+esc(m.id)+'" data-key="'+esc(k)+'" class="del" aria-label="Delete '+esc(k)+'"></ui-button></div>';
           }
         }
         prefsHtml += '</div>';
-        prefsHtml += '<div class="addpref"><input placeholder="key" class="k" /><input placeholder="value (path)" class="v" /><ui-button variant="primary" size="sm" label="Add" data-id="'+m.id+'" class="add"></ui-button></div>';
+        prefsHtml += '<div class="addpref"><input placeholder="key" class="k" aria-label="Preference key" /><input placeholder="value (path)" class="v" aria-label="Preference value (path)" /><ui-button variant="primary" size="sm" label="Add" data-id="'+esc(m.id)+'" class="add"></ui-button></div>';
         const online = isOnline(m);
         const statusBadge = online === null ? '' : (online ? '<ui-badge variant="success">online</ui-badge>' : '<ui-badge variant="danger">offline</ui-badge>');
         const currentBadge = (m.id === cur) ? '<ui-badge variant="success">This machine</ui-badge> ' : '';
-        card.innerHTML = '<span slot="header"><strong>'+m.name+'</strong> ('+m.id+') ' + currentBadge + statusBadge + '</span><div class="meta">'+m.os+' · '+m.role+' · '+m.host+' · '+m.owner+'</div>'+prefsHtml;
+        card.innerHTML = '<span slot="header"><strong>'+esc(m.name)+'</strong> ('+esc(m.id)+') ' + currentBadge + statusBadge + '</span><div class="meta">'+esc(m.os)+' · '+esc(m.role)+' · '+esc(m.host)+' · '+esc(m.owner)+'</div>'+prefsHtml;
         el.appendChild(card);
       }
       document.querySelectorAll('.saveorg').forEach(btn => {
