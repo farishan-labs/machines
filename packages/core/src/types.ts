@@ -3,7 +3,7 @@ export type MachineRole = "personal" | "work" | "shared";
 
 /**
  * Free-form key/value preferences for a machine (e.g. codebase locations).
- * Keys are arbitrary (e.g. "personal", "work", "xs", "fhl"); values are paths.
+ * Keys are arbitrary (e.g. org ids provided by an orgs plugin); values are paths.
  */
 export type MachinePreferences = Record<string, string>;
 

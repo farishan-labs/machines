@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { MachinePreferences } from "@machines/core";
-import { getPreferences, loadInventory, parseOrgsJson } from "@machines/core";
+import { getPreferences, loadInventory, loadPlugins, getOrgs } from "@machines/core";
 
 const port = Number(process.env.PORT ?? "7778");
 const host = process.env.HOST ?? "127.0.0.1";
@@ -97,18 +97,11 @@ function savePrefsFile(data: Record<string, MachinePreferences>): void {
   writeFileSync(p, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
-function orgsFile(): string {
-  return (
-    process.env.ORGS_FILE ?? process.env.USER_MD_ORGS_FILE ?? join(homedir(), "dev", "labs", "user-md", "orgs.json")
-  );
-}
+// Plugins are loaded once at startup. Orgs come from an orgs-providing plugin (optional).
+const plugins = await loadPlugins(process.env as Record<string, string | undefined>);
 
-function loadOrgs(): ReturnType<typeof parseOrgsJson> {
-  try {
-    return parseOrgsJson(readFileSync(orgsFile(), "utf8"));
-  } catch {
-    return [];
-  }
+function loadOrgs(): ReturnType<typeof getOrgs> {
+  return getOrgs(plugins);
 }
 
 function mergePrefs(inv: ReturnType<typeof loadInventory>): ReturnType<typeof loadInventory> {

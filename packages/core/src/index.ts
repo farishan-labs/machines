@@ -1,6 +1,7 @@
 import type { Machine, MachinePreferences } from "./types";
 
 export * from "./env";
+export * from "./plugins";
 export * from "./types";
 
 export function findMachine(inventory: { machines: Machine[] }, id: string): Machine | undefined {

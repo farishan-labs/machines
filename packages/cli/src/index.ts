@@ -7,9 +7,10 @@ import { dirname, join } from "node:path";
 import type { Machine, MachinePreferences } from "@machines/core";
 import {
   findMachine,
+  getOrgs,
   getPreferences,
   loadInventory,
-  parseOrgsJson,
+  loadPlugins,
   removePreference,
   setPreference,
 } from "@machines/core";
@@ -53,18 +54,10 @@ function savePrefsFile(data: Record<string, MachinePreferences>): void {
   writeFileSync(p, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
-function orgsFile(): string {
-  return (
-    process.env.ORGS_FILE ?? process.env.USER_MD_ORGS_FILE ?? join(homedir(), "dev", "labs", "user-md", "orgs.json")
-  );
-}
+const plugins = await loadPlugins(env());
 
-function loadOrgs(): ReturnType<typeof parseOrgsJson> {
-  try {
-    return parseOrgsJson(readFileSync(orgsFile(), "utf8"));
-  } catch {
-    return [];
-  }
+function loadOrgs(): ReturnType<typeof getOrgs> {
+  return getOrgs(plugins);
 }
 
 function mergePrefs(inventory: ReturnType<typeof loadInventory>): ReturnType<typeof loadInventory> {
@@ -302,7 +295,7 @@ if (cmd === "list") {
     const m = inventory.machines.find((x) => (x.host ?? "").toLowerCase() === hn || (x.hostname ?? "").toLowerCase() === hn);
     return m ? m.id : "(unknown)";
   })()}`);
-  console.log(`orgs file: ${orgsFile()}`);
+  console.log(`plugins: ${process.env.MACHINES_PLUGINS_DIR ?? "(default ~/.config/machines/plugins)"}`);
 } else {
   console.error(`unknown command: ${cmd}`);
   console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs, doctor, check [id]");
