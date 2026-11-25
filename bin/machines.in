@@ -1,3 +1,8 @@
 #!/bin/sh
 export PATH="$HOME/.bun/bin:$PATH"
+if [ -f "@ROOT@/.env" ]; then
+  set -a
+  . "@ROOT@/.env"
+  set +a
+fi
 exec bun run "@ROOT@/packages/cli/src/index.ts" "$@"

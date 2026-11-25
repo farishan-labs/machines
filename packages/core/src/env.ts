@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { Machine, MachineInventory, MachineOs, MachinePreferences, MachineRole, Org } from "./types";
 
 const VALID_OS: MachineOs[] = ["linux", "macos", "windows", "other", "android", "ios"];
@@ -89,14 +91,13 @@ export function loadInventory(env: Record<string, string | undefined>): MachineI
   let raw: string;
   if (env.MACHINES_JSON !== undefined) {
     raw = env.MACHINES_JSON;
-  } else if (env.MACHINES_FILE) {
+  } else {
+    const filePath = env.MACHINES_FILE ?? join(homedir(), ".config", "machines", "machines.json");
     try {
-      raw = readFileSync(env.MACHINES_FILE, "utf8");
+      raw = readFileSync(filePath, "utf8");
     } catch {
       raw = "[]";
     }
-  } else {
-    raw = "[]";
   }
   const machines = parseMachinesJson(raw);
   const trimmed = env.DEFAULT_MACHINE?.trim();
