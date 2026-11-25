@@ -15,6 +15,14 @@ export interface Org {
   notes?: string;
 }
 
+export type TunnelBackend = "tailscale" | "ssh" | "custom" | "none";
+
+export interface TunnelConfig {
+  backend: TunnelBackend;
+  target?: string;
+  command?: string;
+}
+
 export interface Machine {
   id: string;
   name: string;
@@ -24,6 +32,7 @@ export interface Machine {
   hostname?: string;
   owner: string;
   tags?: string[];
+  tunnel?: TunnelConfig;
   preferences?: MachinePreferences;
   // aliases for convenience / compatibility
   prefs?: MachinePreferences;

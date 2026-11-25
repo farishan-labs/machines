@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { Machine, MachineInventory, MachineOs, MachinePreferences, MachineRole, Org } from "./types";
+import type { Machine, MachineInventory, MachineOs, MachinePreferences, MachineRole, Org, TunnelConfig, TunnelBackend } from "./types";
 
 const VALID_OS: MachineOs[] = ["linux", "macos", "windows", "other", "android", "ios"];
 const VALID_ROLES: MachineRole[] = ["personal", "work", "shared"];
@@ -33,6 +33,18 @@ function extractPreferences(r: Record<string, unknown>): MachinePreferences | un
   return undefined;
 }
 
+function parseTunnel(raw: unknown): TunnelConfig | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  const backend = r.backend;
+  const valid: TunnelBackend[] = ["tailscale", "ssh", "custom", "none"];
+  if (typeof backend !== "string" || !(valid as string[]).includes(backend)) return undefined;
+  const cfg: TunnelConfig = { backend: backend as TunnelBackend };
+  if (typeof r.target === "string") cfg.target = r.target;
+  if (typeof r.command === "string") cfg.command = r.command;
+  return cfg;
+}
+
 function parseMachine(raw: unknown): Machine | null {
   if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
@@ -44,6 +56,7 @@ function parseMachine(raw: unknown): Machine | null {
   if (typeof r.owner !== "string") return null;
   const tags = Array.isArray(r.tags) ? r.tags.filter((t): t is string => typeof t === "string") : undefined;
   const hostname = typeof r.hostname === "string" ? r.hostname : undefined;
+  const tunnel = parseTunnel(r.tunnel);
   const preferences = extractPreferences(r);
   const machine: Machine = {
     id: r.id,
@@ -54,6 +67,7 @@ function parseMachine(raw: unknown): Machine | null {
     ...(hostname !== undefined ? { hostname } : {}),
     owner: r.owner,
     ...(tags !== undefined ? { tags } : {}),
+    ...(tunnel !== undefined ? { tunnel } : {}),
     ...(preferences !== undefined
       ? { preferences, prefs: preferences, paths: preferences, codebases: preferences }
       : {}),

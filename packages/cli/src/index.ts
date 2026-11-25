@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { hostname } from "node:os";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -12,6 +13,10 @@ import {
   removePreference,
   setPreference,
 } from "@machines/core";
+
+function shellQuote(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
 
 function env(): Record<string, string | undefined> {
   return process.env as Record<string, string | undefined>;
@@ -230,6 +235,64 @@ if (cmd === "list") {
     process.exit(0);
   }
   for (const o of orgs) console.log(`${o.id}  ${o.name}${o.kind ? `  (${o.kind})` : ""}`);
+} else if (cmd === "check" || cmd === "ping") {
+  const targetId = positional[1];
+  const toCheck = targetId ? [targetId] : inventory.machines.map((m) => m.id);
+  const results: any[] = [];
+  for (const id of toCheck) {
+    const m = findMachine(inventory, id);
+    if (!m) {
+      results.push({ id, reachable: false, error: "machine not found" });
+      continue;
+    }
+    const backend = m.tunnel?.backend ?? "ssh";
+    const target = m.tunnel?.target ?? m.host;
+    const start = Date.now();
+    let reachable = false;
+    let ip: string | undefined;
+    let error: string | undefined;
+    try {
+      if (backend === "none") {
+        reachable = true;
+      } else if (backend === "tailscale") {
+        const out = execSync(`tailscale ping --c 1 ${shellQuote(target)}`, { timeout: 10000, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        reachable = true;
+        const m2 = out.match(/\(([\d.]+)\)/);
+        if (m2) ip = m2[1];
+      } else if (backend === "ssh") {
+        execSync(`ssh -o BatchMode=yes -o ConnectTimeout=5 ${shellQuote(target)} true`, { timeout: 10000, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        reachable = true;
+      } else if (backend === "custom") {
+        const cmdStr = (m.tunnel?.command ?? "").replace(/\{target\}/g, target);
+        execSync(cmdStr, { timeout: 10000, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: "/bin/sh" });
+        reachable = true;
+      } else {
+        error = `unknown backend: ${backend}`;
+      }
+    } catch (e: any) {
+      reachable = false;
+      error = (e?.stderr || e?.message || String(e)).toString().trim().slice(0, 200);
+    }
+    const latency = Date.now() - start;
+    results.push({
+      id: m.id,
+      name: m.name,
+      backend,
+      target,
+      reachable,
+      ...(ip ? { ip } : {}),
+      latency_ms: reachable ? latency : undefined,
+      ...(error ? { error } : {}),
+    });
+  }
+  if (jsonFlag) {
+    console.log(JSON.stringify(results.length === 1 && targetId ? results[0] : results, null, 2));
+    process.exit(0);
+  }
+  for (const r of results) {
+    const status = r.reachable ? "OK" : "FAIL";
+    console.log(`${r.id}: ${status} (${r.backend} -> ${r.target})${r.latency_ms !== undefined ? ` ${r.latency_ms}ms` : ""}${r.ip ? ` ip=${r.ip}` : ""}${r.error ? ` - ${r.error}` : ""}`);
+  }
 } else if (cmd === "doctor") {
   console.log(`machines file: ${process.env.MACHINES_FILE ?? "(default ~/.config/machines/machines.json)"}`);
   console.log(`machines: ${inventory.machines.length}`);
@@ -242,6 +305,6 @@ if (cmd === "list") {
   console.log(`orgs file: ${orgsFile()}`);
 } else {
   console.error(`unknown command: ${cmd}`);
-  console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs, doctor");
+  console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs, doctor, check [id]");
   process.exit(1);
 }
