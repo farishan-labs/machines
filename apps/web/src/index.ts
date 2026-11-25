@@ -187,6 +187,13 @@ const html = `<!doctype html>
   <script type="module" src="/ui/index.js"></script>
   <script>
     function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function equalizeCardHeights() {
+      const cards = Array.from(document.querySelectorAll('ui-card'));
+      if (!cards.length) return;
+      cards.forEach(c => { c.style.height = 'auto'; });
+      const max = Math.max(...cards.map(c => c.getBoundingClientRect().height));
+      cards.forEach(c => { c.style.height = max + 'px'; });
+    }
     async function load() {
       const [mRes, oRes, tsRes] = await Promise.all([fetch('/api/machines'), fetch('/api/orgs'), fetch('/api/tailscale')]);
       const d = await mRes.json();
@@ -258,6 +265,7 @@ const html = `<!doctype html>
         card.innerHTML = '<span slot="header"><strong>'+esc(m.name)+'</strong> ('+esc(m.id)+') ' + currentBadge + statusBadge + '</span><div class="meta">'+esc(m.os)+' · '+esc(m.role)+' · '+esc(m.host)+' · '+esc(m.owner)+'</div>'+prefsHtml;
         el.appendChild(card);
       }
+      equalizeCardHeights();
       document.querySelectorAll('.saveorg').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id; const key = btn.dataset.key;
@@ -294,6 +302,7 @@ const html = `<!doctype html>
       });
     }
     load();
+    window.addEventListener('resize', equalizeCardHeights);
   </script>
 </body>
 </html>`;
