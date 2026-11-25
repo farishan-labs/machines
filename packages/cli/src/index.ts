@@ -230,8 +230,18 @@ if (cmd === "list") {
     process.exit(0);
   }
   for (const o of orgs) console.log(`${o.id}  ${o.name}${o.kind ? `  (${o.kind})` : ""}`);
+} else if (cmd === "doctor") {
+  console.log(`machines file: ${process.env.MACHINES_FILE ?? "(default ~/.config/machines/machines.json)"}`);
+  console.log(`machines: ${inventory.machines.length}`);
+  console.log(`default: ${inventory.defaultMachineId ?? "(none)"}`);
+  console.log(`whoami: ${(() => {
+    const hn = hostname().toLowerCase();
+    const m = inventory.machines.find((x) => (x.host ?? "").toLowerCase() === hn || (x.hostname ?? "").toLowerCase() === hn);
+    return m ? m.id : "(unknown)";
+  })()}`);
+  console.log(`orgs file: ${orgsFile()}`);
 } else {
   console.error(`unknown command: ${cmd}`);
-  console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs");
+  console.error("commands: list, show <id>, whoami, default, prefs [id|set|unset|list], orgs, doctor");
   process.exit(1);
 }
