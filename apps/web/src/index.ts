@@ -161,7 +161,8 @@ const html = `<!doctype html>
   .addpref { display: flex; gap: var(--ui-space-2, 0.5rem); margin-top: var(--ui-space-3, 0.75rem); flex-wrap: wrap; }
   .addpref input, input.orgval, input.k, input.v { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
   input:focus-visible, button:focus-visible { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
-  .error { color: var(--ui-color-danger-default, #dc2626); margin: var(--ui-space-2, 0.5rem) 0; }
+  .error { color: var(--ui-color-danger-default, #dc2626); margin: 0; }
+  .error:not(:empty) { margin: var(--ui-space-2, 0.5rem) 0; }
   ui-card { display: block; min-height: 22rem; }
   ui-card::part(card) { height: 100%; min-height: inherit; box-sizing: border-box; }
   .ts-panel { display: grid; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-4, 1rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-lg, 0.5rem); background: var(--ui-color-bg-muted, #f4f4f5); }
