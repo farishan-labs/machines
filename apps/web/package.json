@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun --env-file=../../.env run src/index.ts",
     "build": "echo 'no build step'",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "test": "NODE_PATH=/usr/local/lib/node_modules node tests/e2e.cjs"
   },
   "dependencies": {
     "@machines/core": "workspace:*"
