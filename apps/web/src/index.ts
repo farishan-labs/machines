@@ -240,7 +240,10 @@ const html = `<!doctype html>
       panel.appendChild(ul);
       tsSection.appendChild(panel);
 
+      const oldBar = el.parentNode.querySelector('.filter-bar');
+      if (oldBar) oldBar.remove();
       const filterBar = document.createElement('div');
+      filterBar.className = 'filter-bar';
       filterBar.style.display = 'flex'; filterBar.style.gap = '0.5rem'; filterBar.style.marginBottom = '0.5rem';
       const toggle = document.createElement('ui-button');
       toggle.setAttribute('variant','secondary'); toggle.setAttribute('size','sm');
