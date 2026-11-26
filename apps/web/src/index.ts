@@ -145,12 +145,17 @@ const html = `<!doctype html>
   #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--ui-space-4, 1rem); }
   @media (min-width: 1024px) { #list { grid-template-columns: repeat(4, 1fr); } }
   .card-current { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
-  .meta { color: var(--ui-color-fg-muted, #71717a); font-size: var(--ui-font-size-sm, 0.875rem); }
+  .meta { color: var(--ui-color-fg-muted, #71717a); font-size: var(--ui-font-size-sm, 0.875rem); word-break: break-all; }
   .prefs { margin-top: var(--ui-space-3, 0.75rem); display: grid; gap: var(--ui-space-2, 0.5rem); }
   .pref { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); font-size: var(--ui-font-size-sm, 0.875rem); flex-wrap: nowrap; }
   .pref input.orgval { flex: 1 1 0; min-width: 0; width: 0; }
   .pref-key { font-weight: 600; min-width: 6rem; }
   .pref-val { color: var(--ui-color-fg-default, #09090b); }
+  .org-roots { margin-top: var(--ui-space-3, 0.75rem); display: grid; gap: var(--ui-space-2, 0.5rem); }
+  .org-roots > .org-title { font-weight: 600; font-size: var(--ui-font-size-sm, 0.875rem); color: var(--ui-color-fg-muted, #71717a); text-transform: uppercase; letter-spacing: .04em; }
+  .org-row { display: flex; align-items: center; gap: var(--ui-space-2, 0.5rem); padding: var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); width: 100%; max-width: 100%; box-sizing: border-box; flex-wrap: wrap; }
+  .org-row .pref-key { min-width: 5rem; flex: 0 0 auto; }
+  .org-row .org-kind { font-size: var(--ui-font-size-xs, 0.75rem); color: var(--ui-color-fg-muted, #71717a); }
   .addpref { display: flex; gap: var(--ui-space-2, 0.5rem); margin-top: var(--ui-space-3, 0.75rem); flex-wrap: wrap; }
   .addpref input, input.orgval, input.k, input.v { padding: var(--ui-space-1, 0.25rem) var(--ui-space-2, 0.5rem); border: 1px solid var(--ui-color-border-default, #e4e4e7); border-radius: var(--ui-radius-md, 0.375rem); background: var(--ui-color-bg-default, #fff); color: var(--ui-color-fg-default, #09090b); font-family: inherit; }
   input:focus-visible, button:focus-visible { outline: 2px solid var(--ui-color-accent-default, #2563eb); outline-offset: 2px; }
@@ -183,6 +188,7 @@ const html = `<!doctype html>
   <script type="module" src="/ui/index.js"></script>
   <script>
     function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    let showOffline = true;
     async function load() {
       const [mRes, oRes, tsRes] = await Promise.all([fetch('/api/machines'), fetch('/api/orgs'), fetch('/api/tailscale')]);
       const d = await mRes.json();
@@ -192,11 +198,21 @@ const html = `<!doctype html>
       el.innerHTML = '';
       const cur = d.currentMachineId || '';
       const tsMap = {};
-      (ts.peers || []).forEach(p => { tsMap[String(p.name).toLowerCase()] = !!p.online; });
-      if (ts.self) tsMap[String(ts.self).toLowerCase()] = true;
+      const tsInfo = {};
+      (ts.peers || []).forEach(p => {
+        const key = String(p.name).toLowerCase();
+        tsMap[key] = !!p.online;
+        tsInfo[key] = { online: !!p.online, ip: p.ip || '' };
+      });
+      if (ts.self) { const k = String(ts.self).toLowerCase(); tsMap[k] = true; tsInfo[k] = { online: true, ip: '' }; }
       function isOnline(m) {
         const keys = [m.id, m.host, m.hostname, (m.tunnel && m.tunnel.target) || ''].map(x=>String(x||'').toLowerCase());
         for (const k of keys) { if (k && Object.prototype.hasOwnProperty.call(tsMap, k)) return tsMap[k]; }
+        return null;
+      }
+      function tsDetail(m) {
+        const keys = [m.id, m.host, m.hostname, (m.tunnel && m.tunnel.target) || ''].map(x=>String(x||'').toLowerCase());
+        for (const k of keys) { if (k && Object.prototype.hasOwnProperty.call(tsInfo, k)) return tsInfo[k]; }
         return null;
       }
       // tailscale panel
@@ -224,34 +240,52 @@ const html = `<!doctype html>
       panel.appendChild(ul);
       tsSection.appendChild(panel);
 
-      if (!d.machines || d.machines.length === 0) {
+      const filterBar = document.createElement('div');
+      filterBar.style.display = 'flex'; filterBar.style.gap = '0.5rem'; filterBar.style.marginBottom = '0.5rem';
+      const toggle = document.createElement('ui-button');
+      toggle.setAttribute('variant','secondary'); toggle.setAttribute('size','sm');
+      toggle.setAttribute('label', showOffline ? 'Hide offline' : 'Show offline');
+      toggle.addEventListener('click', () => { showOffline = !showOffline; load(); });
+      filterBar.appendChild(toggle);
+      el.parentNode.insertBefore(filterBar, el);
+
+      const machines = showOffline ? d.machines : (d.machines || []).filter(m => isOnline(m) !== false);
+      if (!machines || machines.length === 0) {
         const es = document.createElement('ui-empty-state');
         es.setAttribute('title', 'No machines');
         es.setAttribute('description', 'Configure MACHINES_FILE to get started.');
         el.appendChild(es);
         return;
       }
-      for (const m of d.machines) {
+      for (const m of machines) {
         const card = document.createElement('ui-card');
         if (m.id === cur) card.classList.add('card-current');
         const prefs = m.preferences || m.prefs || m.paths || m.codebases || {};
         const orgList = (orgs && orgs.length) ? orgs : Object.keys(prefs).map(k=>({id:k,name:k}));
-        let prefsHtml = '<div class="prefs">';
+        let prefsHtml = '<div class="org-roots"><div class="org-title">Org roots</div>';
         for (const o of orgList) {
           const val = prefs[o.id] || '';
-          prefsHtml += '<div class="pref"><span class="pref-key">'+esc(o.name)+':</span><input data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="orgval" value="'+esc(val)+'" placeholder="path" aria-label="'+esc(o.name)+' path for '+esc(m.name)+'" /><ui-button variant="secondary" size="sm" label="Save" data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="saveorg"></ui-button></div>';
+          const kind = o.kind ? ' <span class="org-kind">('+esc(o.kind)+')</span>' : '';
+          prefsHtml += '<div class="org-row"><span class="pref-key">'+esc(o.name)+kind+':</span><input data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="orgval" style="flex:1 1 0;min-width:0;" value="'+esc(val)+'" placeholder="path" aria-label="'+esc(o.name)+' path for '+esc(m.name)+'" /><ui-button variant="secondary" size="sm" label="Save" data-id="'+esc(m.id)+'" data-key="'+esc(o.id)+'" class="saveorg"></ui-button></div>';
         }
         for (const [k, v] of Object.entries(prefs)) {
           if (!orgList.some(o=>o.id===k)) {
-            prefsHtml += '<div class="pref"><span class="pref-key">'+esc(k)+':</span><span class="pref-val">'+esc(v)+'</span><ui-button variant="ghost" size="sm" label="✕" data-id="'+esc(m.id)+'" data-key="'+esc(k)+'" class="del" aria-label="Delete '+esc(k)+'"></ui-button></div>';
+            prefsHtml += '<div class="org-row"><span class="pref-key">'+esc(k)+':</span><span class="pref-val">'+esc(v)+'</span><ui-button variant="ghost" size="sm" label="✕" data-id="'+esc(m.id)+'" data-key="'+esc(k)+'" class="del" aria-label="Delete '+esc(k)+'"></ui-button></div>';
           }
         }
         prefsHtml += '</div>';
         prefsHtml += '<div class="addpref"><input placeholder="key" class="k" aria-label="Preference key" /><input placeholder="value (path)" class="v" aria-label="Preference value (path)" /><ui-button variant="primary" size="sm" label="Add" data-id="'+esc(m.id)+'" class="add"></ui-button></div>';
         const online = isOnline(m);
+        const info = tsDetail(m);
+        const ipText = (info && info.ip) ? ' · '+esc(info.ip) : '';
         const statusBadge = online === null ? '' : (online ? '<ui-badge variant="success">online</ui-badge>' : '<ui-badge variant="danger">offline</ui-badge>');
         const currentBadge = (m.id === cur) ? '<ui-badge variant="success">This machine</ui-badge> ' : '';
-        card.innerHTML = '<span slot="header"><strong>'+esc(m.name)+'</strong> ('+esc(m.id)+') ' + currentBadge + statusBadge + '</span><div class="meta">'+esc(m.os)+' · '+esc(m.role)+' · '+esc(m.host)+' · '+esc(m.owner)+'</div>'+prefsHtml;
+        card.innerHTML = '<span slot="header"><strong>'+esc(m.name)+'</strong> ('+esc(m.id)+') ' + currentBadge + statusBadge + '</span>'
+          + '<div class="meta">'+esc(m.os)+' · '+esc(m.role)+' · '+esc(m.host)+' · '+esc(m.owner)+ipText+' · <span class="org-kind">'+esc((m.tunnel&&m.tunnel.backend)||'none')+' → '+esc((m.tunnel&&m.tunnel.target)||m.host)+'</span></div>'
+          + '<div style="margin-top:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap;">'
+          + '<ui-button variant="secondary" size="sm" label="Check" data-id="'+esc(m.id)+'" class="checkbtn"></ui-button>'
+          + (info && info.ip ? '<ui-button variant="ghost" size="sm" label="Copy IP" data-ip="'+esc(info.ip)+'" class="copyip"></ui-button>' : '')
+          + '</div>'+prefsHtml;
         el.appendChild(card);
       }
       document.querySelectorAll('.saveorg').forEach(btn => {
@@ -277,6 +311,20 @@ const html = `<!doctype html>
           load();
         });
       });
+      document.querySelectorAll('.checkbtn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const r = await fetch('/api/check?id=' + encodeURIComponent(id));
+          const d = await r.json();
+          alert((d.output || '').trim() || 'no output');
+          load();
+        });
+      });
+      document.querySelectorAll('.copyip').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(btn.dataset.ip); } catch (e) {}
+        });
+      });
       document.querySelectorAll('.add').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
@@ -290,6 +338,7 @@ const html = `<!doctype html>
       });
     }
     load();
+    setInterval(load, 15000);
   </script>
 </body>
 </html>`;
@@ -320,6 +369,14 @@ const server = Bun.serve({
     }
     if (url.pathname === "/api/tailscale") {
       return new Response(JSON.stringify(tailscaleStatus()), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    if (url.pathname === "/api/check") {
+      const id = url.searchParams.get("id") || "";
+      const env = { ...process.env, MACHINES_FILE: process.env.MACHINES_FILE ?? "/Users/faris/dev/machines/machines.json", PATH: `${process.env.HOME}/.local/bin:${process.env.PATH ?? ""}` };
+      const out = spawnSync("machines", ["check", id], { encoding: "utf8", env });
+      return new Response(JSON.stringify({ id, output: (out.stdout || "") + (out.stderr || ""), status: out.status }), {
         headers: { "content-type": "application/json" },
       });
     }
